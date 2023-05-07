@@ -11,6 +11,11 @@ let posBlock;
 let posGap;
 let gameState;
 let bird;
+let img;
+
+function preload() {
+  img = loadImage("./flappy.png");
+}
 
 function setup() {
   createCanvas(width, height);
@@ -19,6 +24,7 @@ function setup() {
 
 function draw() {
   background(10, 200, 250);
+
   stroke(100);
   strokeWeight(2);
 
@@ -32,8 +38,11 @@ function draw() {
       score++;
     } else posBlock -= velForward;
 
-    circle(width / 3, posBird, 10);
+    // imageMode(CENTER);
+    // rotate(PI / 3.0);
+    image(img, width / 3, posBird);
 
+    // rotate(-PI / 3.0);
     fill(0, 200, 0);
 
     //top block
@@ -69,11 +78,19 @@ function draw() {
   }
 }
 
-function keyPressed() {
+function jump() {
   velBird = -8;
   if (gameState === "OVER") {
     gameInit();
   }
+}
+
+function keyPressed() {
+  jump();
+}
+
+function touchEnded() {
+  jump();
 }
 
 function random(min, max) {
