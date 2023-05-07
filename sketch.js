@@ -1,5 +1,5 @@
 const width = 400;
-const height = 400;
+const height = 600;
 const heightGap = 100;
 
 let posBird;
