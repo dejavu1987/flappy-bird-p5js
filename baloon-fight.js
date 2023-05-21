@@ -1,24 +1,125 @@
 const width = 400;
 const height = 600;
 
-let posPlayerX;
-let posPlayerY;
 let score;
-// velocity of bird downwards
-let velPlayerY;
-let velPlayerX;
+
 let gameState;
-let bird;
-let img;
+let img = {};
 let posPlatformX;
 let posPlatformY;
 let widthPlatform;
 let heightPlatform;
-let onPlatform;
 
 function preload() {
-  img = loadImage("./bf-player.png");
+  img.player1 = loadImage("./bf-player1.png");
+  img.player2 = loadImage("./bf-player2.png");
 }
+
+class Player {
+  constructor(x, y, playerName, vx, vy) {
+    this.x = x;
+    this.y = y;
+    this.name = playerName;
+    this.velX = vx;
+    this.velY = vy;
+  }
+
+  updatePosition() {
+    this.y += this.velY;
+    this.x += this.velX;
+    // hit top wall
+    if (this.y <= 0) {
+      this.y = 0;
+      this.velY = -this.velY / 2;
+    }
+    // hit left wall
+    if (this.x <= 0) {
+      this.x = 0;
+      this.velX = -this.velX / 2;
+    } else if (this.x + 20 >= width) {
+      // hit right wall
+      this.x = width - 20;
+      this.velX = -this.velX / 2;
+    }
+  }
+
+  draw() {
+    image(img[this.name], this.x, this.y);
+  }
+}
+
+class Platform {
+  constructor(x, y, width, height) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.playersOnPlatform = {};
+  }
+
+  draw() {
+    rect(this.x, this.y, this.width, this.height);
+  }
+
+  playerOnPlatform(player) {
+    return this.playersOnPlatform[player.name];
+  }
+
+  checkCollision(player) {
+    if (
+      player.velY >= 0 &&
+      player.y + 32 >= this.y &&
+      player.y + 32 <= this.y + 15 &&
+      player.x + 20 > this.x &&
+      player.x < this.x + this.width
+    ) {
+      this.playersOnPlatform[player.name] = true;
+      player.velX /= 1.05;
+      player.y = this.y - 32;
+    } else {
+      this.playersOnPlatform[player.name] = false;
+      if (
+        player.y + 32 >= this.y &&
+        player.y <= this.y + this.height &&
+        player.x + 20 > this.x &&
+        player.x < this.x + this.width
+      ) {
+        if (Math.abs(player.x + 20 - this.x) < 10) {
+          player.x = this.x - 20;
+          player.velX = -player.velX;
+        } else if (Math.abs(player.x - (this.x + this.width)) < 10) {
+          player.x = this.x + this.width;
+          player.velX = -player.velX;
+        }
+
+        if (Math.abs(player.y - (this.y + this.height)) < 10) {
+          player.y = this.y + this.height;
+          player.velY = -player.velY;
+        }
+      }
+    }
+  }
+}
+
+const dumpVals = () => {
+  textSize(10);
+  text("px: " + player.x, 20, 30);
+  text("py: " + player.y, 20, 40);
+  text("pvx: " + player.velX, 20, 50);
+  text("pvy: " + player.velY, 20, 60);
+  text("pop1: " + JSON.stringify(platform1.playersOnPlatform), 20, 70);
+  text("pop2: " + JSON.stringify(platform2.playersOnPlatform), 20, 80);
+};
+
+const platform1 = new Platform(100, 500, 200, 40);
+const platform2 = new Platform(100, 200, 200, 40);
+
+const platforms = [platform1, platform2];
+
+const player = new Player(80, 150, "player1", 0, 3);
+const player2 = new Player(180, 150, "player2", 0, 3);
+
+const players = [player, player2];
 
 function setup() {
   createCanvas(width, height);
@@ -31,79 +132,39 @@ function draw() {
   stroke(100);
   strokeWeight(2);
   fill(0, 100, 0);
-  rect(posPlatformX, posPlatformY, widthPlatform, heightPlatform);
+  platforms.forEach((p) => p.draw());
 
   if (gameState === "PROGRESS") {
     fill(250, 100, 0);
-    posPlayerY += velPlayerY;
-    posPlayerX += velPlayerX;
+    player.updatePosition();
+    player2.updatePosition();
 
-    // imageMode(CENTER);
-    // rotate(PI / 3.0);
-    image(img, posPlayerX, posPlayerY);
+    player.draw();
+    player2.draw();
 
-    // rotate(-PI / 3.0);
     fill(0, 200, 0);
 
-    if (posPlayerY <= 0) {
-      posPlayerY = 0;
-      velPlayerY = -velPlayerY / 2;
-    }
-
-    if (posPlayerX <= 0) {
-      posPlayerX = 0;
-      velPlayerX = -velPlayerX / 2;
-    } else if (posPlayerX + 20 >= width) {
-      posPlayerX = width - 20;
-      velPlayerX = -velPlayerX / 2;
-    }
-
-    if (posPlayerY >= height) {
+    if (player.y >= height) {
       gameState = "OVER";
     }
 
-    if (
-      velPlayerY >= 0 &&
-      posPlayerY + 32 >= posPlatformY &&
-      posPlayerY + 32 <= posPlatformY + 5 &&
-      posPlayerX + 20 > posPlatformX &&
-      posPlayerX < posPlatformX + widthPlatform
-    ) {
-      onPlatform = true;
-      velPlayerX /= 1.05;
-      posPlayerY = posPlatformY - 32;
-    } else {
-      onPlatform = false;
-      if (
-        posPlayerY + 32 >= posPlatformY &&
-        posPlayerY <= posPlatformY + heightPlatform &&
-        posPlayerX + 20 > posPlatformX &&
-        posPlayerX < posPlatformX + widthPlatform
-      ) {
-        if (Math.abs(posPlayerX + 20 - posPlatformX) < 10) {
-          posPlayerX = posPlatformX - 20;
-          velPlayerX = -velPlayerX;
-        } else if (Math.abs(posPlayerX - (posPlatformX + widthPlatform)) < 10) {
-          posPlayerX = posPlatformX + widthPlatform;
-          velPlayerX = -velPlayerX;
-        }
+    platforms.forEach((pt) => {
+      players.forEach((pl) => pt.checkCollision(pl));
+    });
 
-        if (Math.abs(posPlayerY - (posPlatformY + heightPlatform)) < 10) {
-          posPlayerY = posPlatformY + heightPlatform;
-          velPlayerY = -velPlayerY;
-        }
+    players.forEach((pl) => {
+      if (!platforms.some((p) => p.playerOnPlatform(pl))) {
+        //physics
+        pl.velY += 0.07;
+      } else {
+        pl.velY = 0;
       }
-    }
-
-    if (!onPlatform) {
-      //physics
-      velPlayerY += 0.07;
-    } else {
-      velPlayerY = 0;
-    }
+    });
 
     fill(255);
-    text("Score: " + score, 20, 20);
+    textSize(12);
+    text("Score: " + score, width - 80, 20);
+    // dumpVals();
   } else {
     textSize(34);
     fill(230, 180, 0);
@@ -115,20 +176,30 @@ function draw() {
   }
 }
 
-function jump() {
-  velPlayerY -= 2;
+function jump(player) {
+  player.velY -= 2;
   if (gameState === "OVER") {
     gameInit();
   }
 }
 
 function keyPressed() {
+  console.log(keyCode);
+
   if (keyCode === UP_ARROW) {
-    jump();
+    jump(player);
   } else if (keyCode === LEFT_ARROW) {
-    velPlayerX -= 1;
+    player.velX -= 1;
   } else if (keyCode === RIGHT_ARROW) {
-    velPlayerX += 1;
+    player.velX += 1;
+  }
+
+  if (keyCode === 87) {
+    jump(player2);
+  } else if (keyCode === 65) {
+    player2.velX -= 1;
+  } else if (keyCode === 68) {
+    player2.velX += 1;
   }
 }
 
@@ -137,16 +208,12 @@ function random(min, max) {
 }
 
 function gameInit() {
-  posPlayerX = 200;
-  posPlayerY = height - 100;
+  player.x = 200;
+  player.y = 400;
   score = 0;
   // velocity of bird downwards
-  velPlayerY = 3;
-  velPlayerX = 0;
-  posPlatformX = 100;
-  posPlatformY = 200;
-  widthPlatform = 200;
-  heightPlatform = 40;
-  onPlatform = true;
+  player.velY = 3;
+  player.velX = 0;
+  player.onPlatform = true;
   gameState = "PROGRESS";
 }
