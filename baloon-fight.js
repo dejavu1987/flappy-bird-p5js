@@ -43,6 +43,16 @@ class Player {
     }
   }
 
+  checkCollision(otherPlayer) {
+    if (
+      Math.abs(this.x - otherPlayer.x) < 20 &&
+      Math.abs(this.y - otherPlayer.y) < 32
+    ) {
+      this.velX = -this.velX;
+      otherPlayer.velX = -otherPlayer.velX;
+    }
+  }
+
   draw() {
     image(img[this.name], this.x, this.y);
   }
@@ -136,11 +146,10 @@ function draw() {
 
   if (gameState === "PROGRESS") {
     fill(250, 100, 0);
-    player.updatePosition();
-    player2.updatePosition();
-
-    player.draw();
-    player2.draw();
+    players.forEach((p) => {
+      p.updatePosition();
+      p.draw();
+    });
 
     fill(0, 200, 0);
 
@@ -151,6 +160,19 @@ function draw() {
     platforms.forEach((pt) => {
       players.forEach((pl) => pt.checkCollision(pl));
     });
+
+    function handlePlayersCollisions() {
+      players.forEach((p1, idx) => {
+        if (idx < players.length - 1)
+          for (let i = idx + 1; i < players.length; i++) {
+            if (p1.name !== players[i].name) {
+              players[i].checkCollision(p1);
+            }
+          }
+      });
+    }
+
+    handlePlayersCollisions();
 
     players.forEach((pl) => {
       if (!platforms.some((p) => p.playerOnPlatform(pl))) {
